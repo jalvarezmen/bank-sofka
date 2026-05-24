@@ -19,6 +19,20 @@ Base URL: `http://localhost:8080/api`
 
 Variables de entorno (opcionales): `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`.
 
+Sin SQL Server local, los tests usan H2 en memoria (`mvn test`).
+
+## Docker
+
+```bash
+docker-compose up --build
+```
+
+Tras levantar SQL Server, ejecuta manualmente `src/main/resources/BaseDatos.sql` si necesitas los datos semilla (o deja que Hibernate cree el esquema con `ddl-auto=update`).
+
+## Postman
+
+Importa `banking-api.postman_collection.json` en Postman.
+
 ## Documentación del proyecto
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — diseño y endpoints
