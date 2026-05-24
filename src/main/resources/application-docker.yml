@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:sqlserver://sqlserver:1433;databaseName=banking_db;encrypt=true;trustServerCertificate=true}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false

@@ -45,9 +45,9 @@
 
 ### TAREA 1.2 — Crear entidad Cliente
 **Prompt sugerido:**
-> "Crea la entidad `Cliente.java` en `com.bank.api.model`. Hereda de `Persona`. Anótala con `@Entity` y `@Table(name = 'clientes')`. Campos propios: clienteId (Long, @Id, @GeneratedValue IDENTITY), contrasena (String, @Column not null), estado (boolean, @Column not null). Relación: un Cliente tiene muchas Cuentas (`@OneToMany(mappedBy='cliente', cascade=CascadeType.ALL, fetch=FetchType.LAZY)`). Usa Lombok."
+> "Crea la entidad `Cliente.java` en `com.bank.api.model`. Hereda de `Persona`. Anótala con `@Entity` y `@Table(name = 'clientes')`. Campos propios: clienteId (Long, @Id, @GeneratedValue IDENTITY), contrasena (String, @Column not null), estado (boolean, @Column not null, default true). Relación: un Cliente tiene muchas Cuentas (`@OneToMany(mappedBy='cliente', cascade=CascadeType.PERSIST, fetch=FetchType.LAZY)`). Usa Lombok."
 
-**Criterio de éxito:** La entidad compila. La relación con Cuenta está declarada. clienteId es la PK.
+**Criterio de éxito:** La entidad compila. Usa `CascadeType.PERSIST` (no ALL). clienteId es la PK.
 
 ---
 
@@ -85,9 +85,9 @@
 ### TAREA 3.1 — Crear DTOs de request y response
 **Prompt sugerido:**
 > "Crea los siguientes DTOs en `com.bank.api.dto` usando Lombok `@Data`:
-> 1. `ClienteDTO` — mismos campos que Cliente (sin clienteId en el request). Incluye validaciones: `@NotBlank` en nombre e identificacion, `@Size(min=4)` en contrasena.
+> 1. `ClienteDTO` — campos de Cliente incluyendo `clienteId` (Long, solo en respuestas; ignorado en POST). Validaciones en POST/PUT: `@NotBlank` en nombre e identificacion, `@Size(min=4)` en contrasena.
 > 2. `CuentaDTO` — campos de Cuenta. Incluye `clienteId` (Long) para asociar al crear. `@NotBlank` en numeroCuenta y tipoCuenta.
-> 3. `MovimientoDTO` — campos: cuentaId (Long), valor (BigDecimal), tipoMovimiento (String). `@NotNull` en cuentaId y valor.
+> 3. `MovimientoDTO` — request/response: cuentaId (Long), valor (BigDecimal); en response incluir también id, fecha, tipoMovimiento, saldo (asignados por el service). Solo `@NotNull` en cuentaId y valor para POST. **No** incluir `tipoMovimiento` en el body del POST (se calcula en el service).
 > 4. `ReporteDTO` — campos: fecha, cliente (nombre), numeroCuenta, tipoCuenta, saldoInicial, estado, movimiento (BigDecimal valor), saldoDisponible."
 
 **Criterio de éxito:** Los 4 DTOs compilan. Tienen anotaciones de validación.
@@ -124,34 +124,32 @@
 
 ### TAREA 5.1 — Crear ClienteService e implementación
 **Prompt sugerido:**
-> "Crea la interfaz `ClienteService` en `com.bank.api.service` con métodos:
-> `List<Cliente> listarTodos()`, `Cliente obtenerPorId(Long id)`, `Cliente crear(ClienteDTO dto)`, `Cliente actualizar(Long id, ClienteDTO dto)`, `void eliminar(Long id)`.
-> Luego crea `ClienteServiceImpl` con `@Service` que implementa `ClienteService`. Inyecta `ClienteRepository` por constructor. En `obtenerPorId` y `actualizar` y `eliminar`, lanza `RecursoNoEncontradoException` si no existe. En `crear`, mapea el DTO a entidad manualmente (sin MapStruct)."
+> "Crea la interfaz `ClienteService` en `com.bank.api.service` con métodos que usan **solo DTOs**:
+> `List<ClienteDTO> listarTodos()`, `ClienteDTO obtenerPorId(Long id)`, `ClienteDTO crear(ClienteDTO dto)`, `ClienteDTO actualizar(Long id, ClienteDTO dto)`, `void eliminar(Long id)`.
+> Luego crea `ClienteServiceImpl` con `@Service`. Inyecta `ClienteRepository` por constructor. Mapeo manual entidad↔DTO con métodos privados `toDto`/`toEntity`. `listarTodos` solo clientes con `estado=true`. `eliminar` hace **borrado lógico** (`estado=false`), no `delete()`. Lanza `RecursoNoEncontradoException` si el id no existe o ya está inactivo."
 
-**Criterio de éxito:** La interfaz y la implementación compilan. Los métodos lanzan la excepción correcta.
+**Criterio de éxito:** Firma pública del service solo usa DTOs. DELETE lógico. Mapeo en el service.
 
 ---
 
 ### TAREA 5.2 — Crear CuentaService e implementación
 **Prompt sugerido:**
-> "Crea la interfaz `CuentaService` y su implementación `CuentaServiceImpl` en `com.bank.api.service`. Sigue el mismo patrón que ClienteService. En el método `crear`, busca el cliente por `clienteId` del DTO (lanza `RecursoNoEncontradoException` si no existe). El campo `saldoDisponible` se inicializa igual que `saldoInicial` al crear."
+> "Crea `CuentaService` y `CuentaServiceImpl` con el mismo patrón DTO que ClienteService (`List<CuentaDTO>`, `CuentaDTO`, borrado lógico con `estado`). En `crear`, busca el cliente activo por `clienteId` del DTO. `saldoDisponible` = `saldoInicial` al crear. Mapeo manual en el service."
 
-**Criterio de éxito:** El servicio compila. Al crear una cuenta, asocia correctamente al cliente.
+**Criterio de éxito:** Solo DTOs en la API del service. Borrado lógico. Cuenta asociada al cliente activo.
 
 ---
 
 ### TAREA 5.3 — Crear MovimientoService con lógica de saldo (F2 y F3)
 **Prompt sugerido:**
-> "Crea `MovimientoService` y `MovimientoServiceImpl`. El método `registrar(MovimientoDTO dto)` debe:
-> 1. Buscar la cuenta por `dto.getCuentaId()` — lanza `RecursoNoEncontradoException` si no existe.
-> 2. Calcular el nuevo saldo: `saldoActual + dto.getValor()` (el valor puede ser negativo para retiros).
-> 3. Si el nuevo saldo calculado es MENOR a 0, lanzar `SaldoInsuficienteException`.
-> 4. Actualizar `cuenta.setSaldoDisponible(nuevoSaldo)` y guardar la cuenta.
-> 5. Crear y guardar el Movimiento con: fecha=ahora, valor=dto.getValor(), saldo=nuevoSaldo, tipoMovimiento determinado por el signo del valor (positivo='Deposito', negativo='Retiro').
-> 6. Retornar el movimiento guardado.
-> Usa `@Transactional` en el método registrar."
+> "Crea `MovimientoService` y `MovimientoServiceImpl` con métodos públicos en DTO: `List<MovimientoDTO> listarTodos()`, `MovimientoDTO obtenerPorId(Long id)`, `MovimientoDTO registrar(MovimientoDTO dto)`. En `registrar`:
+> 1. Buscar cuenta activa por `cuentaId` — `RecursoNoEncontradoException` si no existe o `estado=false`.
+> 2. `nuevoSaldo = saldoDisponible.add(valor)` con `BigDecimal`.
+> 3. Si `nuevoSaldo.compareTo(BigDecimal.ZERO) < 0`, lanzar `SaldoInsuficienteException`.
+> 4. Actualizar y guardar cuenta; crear movimiento con fecha=now, tipo según signo del valor, saldo=nuevoSaldo.
+> 5. Retornar `MovimientoDTO` mapeado. `@Transactional` en `registrar`. Listados con `@Transactional(readOnly = true)`."
 
-**Criterio de éxito:** El método es @Transactional. Lanza SaldoInsuficienteException cuando saldo < 0. Actualiza el saldo de la cuenta.
+**Criterio de éxito:** @Transactional en registrar. compareTo para saldo. Retorna DTO. Sin PUT/DELETE.
 
 ---
 
@@ -167,15 +165,9 @@
 
 ### TAREA 6.1 — Crear ClienteController
 **Prompt sugerido:**
-> "Crea `ClienteController.java` en `com.bank.api.controller` con `@RestController` y `@RequestMapping('/clientes')`. Inyecta `ClienteService` por constructor. Implementa:
-> - `GET /` → listar todos → HTTP 200
-> - `GET /{id}` → obtener por id → HTTP 200
-> - `POST /` con `@Valid @RequestBody ClienteDTO` → crear → HTTP 201
-> - `PUT /{id}` con `@Valid @RequestBody ClienteDTO` → actualizar → HTTP 200
-> - `DELETE /{id}` → eliminar → HTTP 204 (sin cuerpo)
-> Cada método retorna `ResponseEntity<>`."
+> "Crea `ClienteController.java` con `@RestController` y `@RequestMapping('/clientes')`. Inyecta `ClienteService`. Implementa GET /, GET /{id}, POST /, PUT /{id}, DELETE /{id} (borrado lógico). Todos los métodos usan `ClienteDTO` en request/response (`ResponseEntity<ClienteDTO>` o `List<ClienteDTO>`). @Valid en POST/PUT."
 
-**Criterio de éxito:** El controller compila. Usa @Valid. Retorna los códigos HTTP correctos.
+**Criterio de éxito:** Solo DTOs en el controller. Códigos HTTP correctos. DELETE → 204.
 
 ---
 
@@ -189,9 +181,9 @@
 
 ### TAREA 6.3 — Crear MovimientoController
 **Prompt sugerido:**
-> "Crea `MovimientoController.java` para `/movimientos`. El endpoint `POST /` llama a `movimientoService.registrar(dto)`. Los demás métodos CRUD siguen el patrón estándar. El POST retorna HTTP 201."
+> "Crea `MovimientoController.java` para `/movimientos`. Solo: GET / (listar), GET /{id}, POST / (registrar → HTTP 201). **No** implementar PUT ni DELETE (movimientos inmutables). Todos los métodos retornan `MovimientoDTO`."
 
-**Criterio de éxito:** El POST a /movimientos desencadena la lógica de saldo del servicio.
+**Criterio de éxito:** Solo GET y POST. POST ejecuta lógica de saldo. Respuestas en DTO.
 
 ---
 

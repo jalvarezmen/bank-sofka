@@ -56,12 +56,12 @@ public class ClienteController {
     private final ClienteService clienteService;  // siempre final
 
     @GetMapping
-    public ResponseEntity<List<Cliente>> listarTodos() {
+    public ResponseEntity<List<ClienteDTO>> listarTodos() {
         return ResponseEntity.ok(clienteService.listarTodos());
     }
 
     @PostMapping
-    public ResponseEntity<Cliente> crear(@Valid @RequestBody ClienteDTO dto) {
+    public ResponseEntity<ClienteDTO> crear(@Valid @RequestBody ClienteDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                              .body(clienteService.crear(dto));
     }
@@ -77,11 +77,15 @@ public class ClienteServiceImpl implements ClienteService {
     private final ClienteRepository clienteRepository;
 
     @Override
-    public Cliente obtenerPorId(Long id) {
-        return clienteRepository.findById(id)
+    public ClienteDTO obtenerPorId(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException(
                 "Cliente no encontrado con id: " + id));
+        return toDto(cliente);
     }
+
+    private ClienteDTO toDto(Cliente cliente) { /* mapeo manual */ }
+    private Cliente toEntity(ClienteDTO dto) { /* mapeo manual */ }
 }
 ```
 
@@ -131,13 +135,24 @@ try {
 
 ---
 
-## 7. ENTIDADES JPA
+## 7. POLÍTICA DTO (OBLIGATORIA)
+
+- **Controllers:** solo reciben y retornan DTOs (`ResponseEntity<ClienteDTO>`, nunca `Cliente`).
+- **Services (interfaces e implementaciones):** métodos públicos usan DTOs en entrada y salida.
+- **Repositories:** trabajan solo con entidades JPA.
+- **Mapeo:** manual en cada `*ServiceImpl` (métodos privados `toDto` / `toEntity`). Sin MapStruct en este proyecto.
+- **Movimientos:** el request solo lleva `cuentaId` y `valor`; `tipoMovimiento` se calcula en el service según el signo del valor.
+
+---
+
+## 8. ENTIDADES JPA
 
 - Toda entidad tiene `@Entity` y `@Table(name = "nombre_en_snake_case")`
 - La PK siempre es `Long` con `@GeneratedValue(strategy = GenerationType.IDENTITY)`
-- No exponer entidades JPA directamente en los endpoints — usar DTOs
+- No exponer entidades JPA en controllers ni en firmas públicas de servicios
 - Las relaciones lazy se anotan explícitamente: `fetch = FetchType.LAZY`
-- Evitar `CascadeType.ALL` a menos que sea semánticamente correcto
+- **Cliente → Cuenta:** usar `cascade = CascadeType.PERSIST` (no `ALL`) para no borrar cuentas/movimientos en cascada accidentalmente
+- **Borrado:** `DELETE` en clientes y cuentas es **borrado lógico** (`estado = false`), no `repository.delete()`
 
 ```java
 @Entity
@@ -157,15 +172,17 @@ public class Cliente extends Persona {
     @Column(nullable = false)
     private boolean estado;
 
-    @OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY)
-    @JsonIgnore  // evita recursión infinita en serialización
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private List<Cuenta> cuentas = new ArrayList<>();
 }
 ```
 
+- **Contraseña:** se persiste en texto plano (fuera de alcance: BCrypt o Spring Security).
+- **Montos:** usar `BigDecimal` y comparar con `compareTo`, nunca `==` ni `double`.
+
 ---
 
-## 8. RESPUESTAS HTTP — CÓDIGOS OBLIGATORIOS
+## 9. RESPUESTAS HTTP — CÓDIGOS OBLIGATORIOS
 
 | Operación | Código HTTP |
 |-----------|-------------|
@@ -179,7 +196,7 @@ public class Cliente extends Persona {
 
 ---
 
-## 9. VALIDACIONES EN DTOs
+## 10. VALIDACIONES EN DTOs
 
 - Usar anotaciones de `jakarta.validation.constraints`
 - Mensajes de error en español
@@ -203,7 +220,7 @@ public class ClienteDTO {
 
 ---
 
-## 10. REGLAS PARA PRUEBAS UNITARIAS
+## 11. REGLAS PARA PRUEBAS UNITARIAS
 
 - Clase de test: `@ExtendWith(MockitoExtension.class)`
 - Nombre de test: `metodoProbado_resultadoEsperado_cuandoCondicion`
@@ -231,7 +248,7 @@ void registrarMovimiento_debeLanzarExcepcion_cuandoSaldoInsuficiente() {
 
 ---
 
-## 11. REGLAS DE FORMATO
+## 12. REGLAS DE FORMATO
 
 - Indentación: 4 espacios (no tabs)
 - Máximo 1 línea en blanco entre métodos
@@ -242,7 +259,7 @@ void registrarMovimiento_debeLanzarExcepcion_cuandoSaldoInsuficiente() {
 
 ---
 
-## 12. REGLAS PARA docker-compose.yml
+## 13. REGLAS PARA docker-compose.yml
 
 - Siempre incluir `healthcheck` en el servicio de base de datos
 - La app debe tener `depends_on` con `condition: service_healthy`
@@ -251,11 +268,13 @@ void registrarMovimiento_debeLanzarExcepcion_cuandoSaldoInsuficiente() {
 
 ---
 
-## 13. LO QUE EL AGENTE NUNCA DEBE HACER
+## 14. LO QUE EL AGENTE NUNCA DEBE HACER
 
 - ❌ Poner lógica de negocio en un Controller
 - ❌ Llamar directamente a un Repository desde un Controller
-- ❌ Retornar entidades JPA directamente desde endpoints (usar DTOs)
+- ❌ Retornar entidades JPA desde controllers o métodos públicos de servicios
+- ❌ Usar `repository.delete()` para clientes/cuentas (usar borrado lógico con `estado`)
+- ❌ Implementar PUT/DELETE en movimientos (son inmutables; solo POST y GET)
 - ❌ Hacer commit de contraseñas o secrets en el código
 - ❌ Usar `System.out.println` (usar `@Slf4j` de Lombok con `log.info/error`)
 - ❌ Ignorar excepciones con catch vacíos

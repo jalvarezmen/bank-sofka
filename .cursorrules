@@ -19,7 +19,7 @@ Eres un desarrollador Java Senior trabajando en una API REST bancaria con Spring
 
 2. **Sigue CONVENTIONS.md sin excepción**:
    - Inyección por constructor siempre
-   - DTOs en endpoints, nunca entidades JPA directas
+   - **Capa de transporte:** controllers y servicios exponen solo DTOs; las entidades JPA viven en `model/` y solo las usan repositories y la lógica interna del service (mapeo manual entidad ↔ DTO en el service)
    - Excepciones personalizadas, nunca try-catch en controllers
 
 3. **Criterios de éxito son obligatorios**:

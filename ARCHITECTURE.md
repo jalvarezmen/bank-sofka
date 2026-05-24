@@ -172,9 +172,9 @@ HTTP Request
     ↓
 [Controller]        ← Valida entrada con @Valid, mapea a DTO
     ↓
-[Service]           ← Ejecuta lógica de negocio, lanza excepciones si aplica
+[Service]           ← Lógica de negocio; mapea DTO ↔ entidad; lanza excepciones
     ↓
-[Repository]        ← Consulta/persiste en BD con JPA
+[Repository]        ← Consulta/persiste entidades JPA
     ↓
 [Base de Datos]     ← SQL Server
     ↑
@@ -212,33 +212,56 @@ Todas las excepciones se centralizan en `GlobalExceptionHandler.java` (@Controll
 
 ---
 
-## 8. ENDPOINTS COMPLETOS
+## 8. POLÍTICA DE CAPAS Y DTOs
+
+- Controllers y servicios **solo** usan DTOs en la API pública.
+- Repositories solo manipulan entidades (`model/`).
+- Mapeo entidad ↔ DTO manual en cada `*ServiceImpl`.
+
+---
+
+## 9. REGLAS DE NEGOCIO TRANSVERSALES
+
+### Borrado lógico (clientes y cuentas)
+- `DELETE /clientes/{id}` y `DELETE /cuentas/{id}` ponen `estado = false`.
+- No se usa `repository.delete()` ni borrado en cascada de movimientos.
+- Listados por defecto solo recursos con `estado = true` (filtrar en repository o service).
+
+### Movimientos inmutables
+- Solo **GET** (listar / por id) y **POST** (registrar con actualización de saldo).
+- No hay PUT ni DELETE: editar o borrar movimientos invalidaría el historial de saldos.
+
+### Registro de movimiento
+- Request: `cuentaId`, `valor` (positivo = depósito, negativo = retiro).
+- `tipoMovimiento` se asigna en el service: `Deposito` si `valor > 0`, `Retiro` si `valor < 0`.
+- Rechazar si la cuenta tiene `estado = false` o si `nuevoSaldo.compareTo(BigDecimal.ZERO) < 0`.
+
+---
+
+## 10. ENDPOINTS COMPLETOS
 
 ### Base URL: `http://localhost:8080/api`
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | `/clientes` | Listar todos los clientes |
+| GET | `/clientes` | Listar clientes activos |
 | GET | `/clientes/{id}` | Obtener cliente por ID |
 | POST | `/clientes` | Crear cliente |
 | PUT | `/clientes/{id}` | Actualizar cliente completo |
-| PATCH | `/clientes/{id}` | Actualizar cliente parcial |
-| DELETE | `/clientes/{id}` | Eliminar cliente |
-| GET | `/cuentas` | Listar todas las cuentas |
+| DELETE | `/clientes/{id}` | Desactivar cliente (`estado=false`) |
+| GET | `/cuentas` | Listar cuentas activas |
 | GET | `/cuentas/{id}` | Obtener cuenta por ID |
 | POST | `/cuentas` | Crear cuenta |
 | PUT | `/cuentas/{id}` | Actualizar cuenta |
-| DELETE | `/cuentas/{id}` | Eliminar cuenta |
-| GET | `/movimientos` | Listar todos los movimientos |
+| DELETE | `/cuentas/{id}` | Desactivar cuenta (`estado=false`) |
+| GET | `/movimientos` | Listar movimientos |
 | GET | `/movimientos/{id}` | Obtener movimiento por ID |
-| POST | `/movimientos` | Registrar movimiento (con lógica de saldo) |
-| PUT | `/movimientos/{id}` | Actualizar movimiento |
-| DELETE | `/movimientos/{id}` | Eliminar movimiento |
+| POST | `/movimientos` | Registrar movimiento (lógica de saldo) |
 | GET | `/reportes?fechaInicio=yyyy-MM-dd&fechaFin=yyyy-MM-dd&clienteId={id}` | Reporte estado de cuenta |
 
 ---
 
-## 9. CONFIGURACIÓN DOCKER
+## 11. CONFIGURACIÓN DOCKER
 
 ### Servicios en docker-compose:
 - `banking-api` → aplicación Spring Boot (puerto 8080)
@@ -253,7 +276,13 @@ SPRING_DATASOURCE_PASSWORD=Banking@2024
 
 ---
 
-## 10. DEPENDENCIAS MAVEN (pom.xml)
+### Esquema de base de datos
+- **Desarrollo local:** `spring.jpa.hibernate.ddl-auto: update` en `application.yml`.
+- **Docker / entrega:** ejecutar `BaseDatos.sql` y usar `ddl-auto: validate` (perfil `docker` o variables de entorno).
+
+---
+
+## 12. DEPENDENCIAS MAVEN (pom.xml)
 
 ```xml
 <!-- Spring Boot Starter Web -->
