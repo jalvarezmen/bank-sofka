@@ -2,6 +2,7 @@ package com.bank.api.controller;
 
 import com.bank.api.dto.ClienteDTO;
 import com.bank.api.service.ClienteService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/clientes")
 @RequiredArgsConstructor
+@Tag(name = "Clientes", description = "CRUD de clientes (borrado lógico)")
 public class ClienteController {
 
     private final ClienteService clienteService;

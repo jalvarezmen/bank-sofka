@@ -19,7 +19,7 @@ public class Persona {
     private String genero;
 
     @Column(name = "edad")
-    private int edad;
+    private Integer edad;
 
     @Column(name = "identificacion", nullable = false, unique = true, length = 20)
     private String identificacion;

@@ -17,6 +17,9 @@ mvn spring-boot:run
 
 Base URL: `http://localhost:8080/api`
 
+**Swagger UI:** [http://localhost:8080/api/swagger-ui/index.html](http://localhost:8080/api/swagger-ui/index.html)  
+**OpenAPI JSON:** `http://localhost:8080/api/v3/api-docs`
+
 Variables de entorno (opcionales): `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`.
 
 Sin SQL Server local, los tests usan H2 en memoria (`mvn test`).

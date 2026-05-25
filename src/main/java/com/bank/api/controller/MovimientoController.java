@@ -2,6 +2,7 @@ package com.bank.api.controller;
 
 import com.bank.api.dto.MovimientoDTO;
 import com.bank.api.service.MovimientoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/movimientos")
 @RequiredArgsConstructor
+@Tag(name = "Movimientos", description = "Consulta y registro de movimientos (inmutables)")
 public class MovimientoController {
 
     private final MovimientoService movimientoService;

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "banking-api",
-    "description": "Colección API Sistema Bancario — Sofka",
+    "description": "API Sistema Bancario — Sofka\n\n**Antes de probar:** API en `http://localhost:8080` (`docker compose up`) y BD con datos del PDF:\n```powershell\nGet-Content src\\main\\resources\\BaseDatos.sql -Raw | docker exec -i banking-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"Banking@2024\" -C\n```\n\n**Orden recomendado:** carpeta `01 - Solo lectura` → `02 - Movimientos y reporte` → `03 - CRUD (altera BD)`.\n\nSi ejecutas DELETE de cliente/cuenta id 1 y luego más requests, fallarán con **404** (borrado lógico). El reporte del PDF usa fechas **2022-02** y `clienteId=2` (Marianela), no 2024.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,108 +12,37 @@
   ],
   "item": [
     {
-      "name": "Clientes",
+      "name": "01 - Solo lectura (BD limpia)",
+      "description": "Ejecutar primero. No modifica datos.",
       "item": [
         {
-          "name": "Listar clientes",
+          "name": "Listar clientes (3 del PDF)",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/clientes"
           }
         },
         {
-          "name": "Obtener cliente por ID",
+          "name": "Obtener cliente Jose (id 1)",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/clientes/1"
           }
         },
         {
-          "name": "Crear cliente",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Jose Lema\",\n  \"genero\": \"M\",\n  \"edad\": 35,\n  \"identificacion\": \"9998887776\",\n  \"direccion\": \"Otavalo\",\n  \"telefono\": \"0987654321\",\n  \"contrasena\": \"1234\"\n}"
-            },
-            "url": "{{baseUrl}}/clientes"
-          }
-        },
-        {
-          "name": "Actualizar cliente",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Jose Lema Actualizado\",\n  \"genero\": \"M\",\n  \"edad\": 36,\n  \"identificacion\": \"1234567890\",\n  \"direccion\": \"Caldas\",\n  \"telefono\": \"3003458743\",\n  \"contrasena\": \"1234\"\n}"
-            },
-            "url": "{{baseUrl}}/clientes/1"
-          }
-        },
-        {
-          "name": "Eliminar cliente (lógico)",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/clientes/1"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Cuentas",
-      "item": [
-        {
-          "name": "Listar cuentas",
+          "name": "Listar cuentas (4 del PDF)",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/cuentas"
           }
         },
         {
-          "name": "Obtener cuenta por ID",
+          "name": "Obtener cuenta 478758 (id 1, saldo 1425)",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/cuentas/1"
           }
         },
-        {
-          "name": "Crear cuenta",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"numeroCuenta\": \"999001\",\n  \"tipoCuenta\": \"Ahorro\",\n  \"saldoInicial\": 1500.00,\n  \"clienteId\": 1\n}"
-            },
-            "url": "{{baseUrl}}/cuentas"
-          }
-        },
-        {
-          "name": "Actualizar cuenta",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"numeroCuenta\": \"478758\",\n  \"tipoCuenta\": \"Ahorro\",\n  \"saldoInicial\": 2000.00,\n  \"saldoDisponible\": 1425.00,\n  \"clienteId\": 1\n}"
-            },
-            "url": "{{baseUrl}}/cuentas/1"
-          }
-        },
-        {
-          "name": "Eliminar cuenta (lógico)",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/cuentas/1"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Movimientos",
-      "item": [
         {
           "name": "Listar movimientos",
           "request": {
@@ -122,68 +51,151 @@
           }
         },
         {
-          "name": "Obtener movimiento por ID",
+          "name": "Obtener movimiento id 1",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/movimientos/1"
           }
         },
         {
-          "name": "Registrar retiro",
+          "name": "Reporte Marianela Feb 2022 (caso PDF)",
           "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"cuentaId\": 1,\n  \"valor\": -575\n}"
-            },
-            "url": "{{baseUrl}}/movimientos"
-          }
-        },
-        {
-          "name": "Registrar depósito",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"cuentaId\": 2,\n  \"valor\": 600\n}"
-            },
-            "url": "{{baseUrl}}/movimientos"
-          }
-        },
-        {
-          "name": "Retiro con saldo insuficiente",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"cuentaId\": 1,\n  \"valor\": -99999\n}"
-            },
-            "url": "{{baseUrl}}/movimientos"
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes?fechaInicio=2022-02-01&fechaFin=2022-02-28&clienteId=2",
+              "host": ["{{baseUrl}}"],
+              "path": ["reportes"],
+              "query": [
+                { "key": "fechaInicio", "value": "2022-02-01" },
+                { "key": "fechaFin", "value": "2022-02-28" },
+                { "key": "clienteId", "value": "2" }
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "Reportes",
+      "name": "02 - Movimientos y reporte",
+      "description": "Requiere BD limpia. Retiro en cuenta 1; saldo insuficiente en cuenta 4 (saldo 0).",
       "item": [
         {
-          "name": "Estado de cuenta por cliente y fechas",
+          "name": "Registrar retiro cuenta 1 (-500, saldo queda 925)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 1,\n  \"valor\": -500\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Retiro saldo insuficiente cuenta 4 (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuentaId\": 4,\n  \"valor\": -100\n}"
+            },
+            "url": "{{baseUrl}}/movimientos"
+          }
+        },
+        {
+          "name": "Reporte Jose Feb 2022 (movimiento id 1)",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/reportes?fechaInicio=2024-01-01&fechaFin=2024-12-31&clienteId=1",
+              "raw": "{{baseUrl}}/reportes?fechaInicio=2022-02-01&fechaFin=2022-02-28&clienteId=1",
               "host": ["{{baseUrl}}"],
               "path": ["reportes"],
               "query": [
-                { "key": "fechaInicio", "value": "2024-01-01" },
-                { "key": "fechaFin", "value": "2024-12-31" },
+                { "key": "fechaInicio", "value": "2022-02-01" },
+                { "key": "fechaFin", "value": "2022-02-28" },
                 { "key": "clienteId", "value": "1" }
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "03 - CRUD (altera BD, ejecutar al final)",
+      "description": "Después de estas pruebas, vuelve a cargar BaseDatos.sql para repetir desde cero.",
+      "item": [
+        {
+          "name": "Clientes",
+          "item": [
+            {
+              "name": "Crear cliente nuevo",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Cliente Prueba Postman\",\n  \"genero\": \"M\",\n  \"edad\": 30,\n  \"identificacion\": \"ID-POSTMAN-UNICO\",\n  \"direccion\": \"Quito\",\n  \"telefono\": \"0999999999\",\n  \"contrasena\": \"1234\"\n}"
+                },
+                "url": "{{baseUrl}}/clientes"
+              }
+            },
+            {
+              "name": "Actualizar cliente id 3 (Juan)",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Juan Osorio\",\n  \"genero\": \"M\",\n  \"edad\": 40,\n  \"identificacion\": \"ID-JUAN-003\",\n  \"direccion\": \"13 junio y Equinoccial\",\n  \"telefono\": \"098874587\",\n  \"contrasena\": \"1245\"\n}"
+                },
+                "url": "{{baseUrl}}/clientes/3"
+              }
+            },
+            {
+              "name": "Eliminar cliente id 3 (lógico, 204)",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/clientes/3"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cuentas",
+          "item": [
+            {
+              "name": "Crear cuenta para Jose (cliente 1)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroCuenta\": \"999001\",\n  \"tipoCuenta\": \"Ahorro\",\n  \"saldoInicial\": 1500.00,\n  \"clienteId\": 1\n}"
+                },
+                "url": "{{baseUrl}}/cuentas"
+              }
+            },
+            {
+              "name": "Actualizar cuenta id 2",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numeroCuenta\": \"225487\",\n  \"tipoCuenta\": \"Corriente\",\n  \"saldoInicial\": 100.00,\n  \"saldoDisponible\": 700.00,\n  \"clienteId\": 2\n}"
+                },
+                "url": "{{baseUrl}}/cuentas/2"
+              }
+            },
+            {
+              "name": "Eliminar cuenta id 4 (lógico, 204)",
+              "request": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/cuentas/4"
+              }
+            }
+          ]
         }
       ]
     }

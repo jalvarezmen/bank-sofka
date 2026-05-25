@@ -14,7 +14,7 @@ public class ClienteDTO {
 
     private String genero;
 
-    private int edad;
+    private Integer edad;
 
     @NotBlank(message = "La identificacion es obligatoria")
     private String identificacion;

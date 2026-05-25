@@ -2,6 +2,7 @@ package com.bank.api.controller;
 
 import com.bank.api.dto.ReporteDTO;
 import com.bank.api.service.ReporteService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/reportes")
 @RequiredArgsConstructor
+@Tag(name = "Reportes", description = "Estado de cuenta por cliente y rango de fechas")
 public class ReporteController {
 
     private final ReporteService reporteService;

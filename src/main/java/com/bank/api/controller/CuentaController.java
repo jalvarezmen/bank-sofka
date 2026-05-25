@@ -2,6 +2,7 @@ package com.bank.api.controller;
 
 import com.bank.api.dto.CuentaDTO;
 import com.bank.api.service.CuentaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/cuentas")
 @RequiredArgsConstructor
+@Tag(name = "Cuentas", description = "CRUD de cuentas bancarias (borrado lógico)")
 public class CuentaController {
 
     private final CuentaService cuentaService;
