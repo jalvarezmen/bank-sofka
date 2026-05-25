@@ -1,9 +1,9 @@
 package com.bank.api.service;
 
 import com.bank.api.dto.ClienteDTO;
-import com.bank.api.exception.RecursoNoEncontradoException;
 import com.bank.api.model.Cliente;
 import com.bank.api.repository.ClienteRepository;
+import com.bank.api.service.support.RecursoActivoConsulta;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClienteServiceImpl implements ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final RecursoActivoConsulta recursoActivoConsulta;
 
     @Override
     @Transactional(readOnly = true)
@@ -42,13 +43,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Transactional
     public ClienteDTO actualizar(Long id, ClienteDTO dto) {
         Cliente cliente = buscarActivo(id);
-        cliente.setNombre(dto.getNombre());
-        cliente.setGenero(dto.getGenero());
-        cliente.setEdad(dto.getEdad());
-        cliente.setIdentificacion(dto.getIdentificacion());
-        cliente.setDireccion(dto.getDireccion());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setContrasena(dto.getContrasena());
+        copiarDatosPersona(cliente, dto);
         return toDto(clienteRepository.save(cliente));
     }
 
@@ -61,10 +56,17 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private Cliente buscarActivo(Long id) {
-        return clienteRepository
-                .findByClienteIdAndEstadoTrue(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cliente no encontrado con id: " + id));
+        return recursoActivoConsulta.clienteActivoPorId(id);
+    }
+
+    private void copiarDatosPersona(Cliente cliente, ClienteDTO dto) {
+        cliente.setNombre(dto.getNombre());
+        cliente.setGenero(dto.getGenero());
+        cliente.setEdad(dto.getEdad());
+        cliente.setIdentificacion(dto.getIdentificacion());
+        cliente.setDireccion(dto.getDireccion());
+        cliente.setTelefono(dto.getTelefono());
+        cliente.setContrasena(dto.getContrasena());
     }
 
     private ClienteDTO toDto(Cliente cliente) {
@@ -84,14 +86,8 @@ public class ClienteServiceImpl implements ClienteService {
     private Cliente toEntity(ClienteDTO dto) {
         Cliente cliente = new Cliente();
         cliente.setClienteId(dto.getClienteId());
-        cliente.setNombre(dto.getNombre());
-        cliente.setGenero(dto.getGenero());
-        cliente.setEdad(dto.getEdad());
-        cliente.setIdentificacion(dto.getIdentificacion());
-        cliente.setDireccion(dto.getDireccion());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setContrasena(dto.getContrasena());
         cliente.setEstado(dto.isEstado());
+        copiarDatosPersona(cliente, dto);
         return cliente;
     }
 }

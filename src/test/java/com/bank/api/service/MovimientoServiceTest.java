@@ -12,8 +12,8 @@ import com.bank.api.model.Cuenta;
 import com.bank.api.model.Movimiento;
 import com.bank.api.repository.CuentaRepository;
 import com.bank.api.repository.MovimientoRepository;
+import com.bank.api.service.support.RecursoActivoConsulta;
 import java.math.BigDecimal;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +28,9 @@ class MovimientoServiceTest {
     private MovimientoRepository movimientoRepository;
 
     @Mock
+    private RecursoActivoConsulta recursoActivoConsulta;
+
+    @Mock
     private CuentaRepository cuentaRepository;
 
     @InjectMocks
@@ -40,7 +43,7 @@ class MovimientoServiceTest {
         cuenta.setSaldoDisponible(new BigDecimal("2000"));
         cuenta.setEstado(true);
 
-        when(cuentaRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.of(cuenta));
+        when(recursoActivoConsulta.cuentaActivaPorId(1L)).thenReturn(cuenta);
         when(cuentaRepository.save(any(Cuenta.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(movimientoRepository.save(any(Movimiento.class))).thenAnswer(invocation -> {
             Movimiento movimiento = invocation.getArgument(0);
@@ -71,7 +74,7 @@ class MovimientoServiceTest {
         cuenta.setSaldoDisponible(new BigDecimal("100"));
         cuenta.setEstado(true);
 
-        when(cuentaRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.of(cuenta));
+        when(recursoActivoConsulta.cuentaActivaPorId(1L)).thenReturn(cuenta);
 
         MovimientoDTO dto = new MovimientoDTO();
         dto.setCuentaId(1L);

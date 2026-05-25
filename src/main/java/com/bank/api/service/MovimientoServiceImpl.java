@@ -3,6 +3,7 @@ package com.bank.api.service;
 import com.bank.api.dto.MovimientoDTO;
 import com.bank.api.exception.RecursoNoEncontradoException;
 import com.bank.api.exception.SaldoInsuficienteException;
+import com.bank.api.service.support.RecursoActivoConsulta;
 import com.bank.api.model.Cuenta;
 import com.bank.api.model.Movimiento;
 import com.bank.api.repository.CuentaRepository;
@@ -23,6 +24,7 @@ public class MovimientoServiceImpl implements MovimientoService {
 
     private final MovimientoRepository movimientoRepository;
     private final CuentaRepository cuentaRepository;
+    private final RecursoActivoConsulta recursoActivoConsulta;
 
     @Override
     @Transactional(readOnly = true)
@@ -45,15 +47,8 @@ public class MovimientoServiceImpl implements MovimientoService {
     @Override
     @Transactional
     public MovimientoDTO registrar(MovimientoDTO dto) {
-        Cuenta cuenta = cuentaRepository
-                .findByIdAndEstadoTrue(dto.getCuentaId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cuenta no encontrada con id: " + dto.getCuentaId()));
-
-        BigDecimal nuevoSaldo = cuenta.getSaldoDisponible().add(dto.getValor());
-        if (nuevoSaldo.compareTo(BigDecimal.ZERO) < 0) {
-            throw new SaldoInsuficienteException();
-        }
+        Cuenta cuenta = recursoActivoConsulta.cuentaActivaPorId(dto.getCuentaId());
+        BigDecimal nuevoSaldo = calcularSaldoTrasMovimiento(cuenta, dto.getValor());
 
         cuenta.setSaldoDisponible(nuevoSaldo);
         cuentaRepository.save(cuenta);
@@ -66,6 +61,14 @@ public class MovimientoServiceImpl implements MovimientoService {
         movimiento.setCuenta(cuenta);
 
         return toDto(movimientoRepository.save(movimiento));
+    }
+
+    private BigDecimal calcularSaldoTrasMovimiento(Cuenta cuenta, BigDecimal valor) {
+        BigDecimal nuevoSaldo = cuenta.getSaldoDisponible().add(valor);
+        if (nuevoSaldo.compareTo(BigDecimal.ZERO) < 0) {
+            throw new SaldoInsuficienteException();
+        }
+        return nuevoSaldo;
     }
 
     private String resolverTipoMovimiento(BigDecimal valor) {

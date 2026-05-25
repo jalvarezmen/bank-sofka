@@ -1,11 +1,10 @@
 package com.bank.api.service;
 
 import com.bank.api.dto.CuentaDTO;
-import com.bank.api.exception.RecursoNoEncontradoException;
 import com.bank.api.model.Cliente;
 import com.bank.api.model.Cuenta;
-import com.bank.api.repository.ClienteRepository;
 import com.bank.api.repository.CuentaRepository;
+import com.bank.api.service.support.RecursoActivoConsulta;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CuentaServiceImpl implements CuentaService {
 
     private final CuentaRepository cuentaRepository;
-    private final ClienteRepository clienteRepository;
+    private final RecursoActivoConsulta recursoActivoConsulta;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,10 +34,7 @@ public class CuentaServiceImpl implements CuentaService {
     @Override
     @Transactional
     public CuentaDTO crear(CuentaDTO dto) {
-        Cliente cliente = clienteRepository
-                .findByClienteIdAndEstadoTrue(dto.getClienteId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cliente no encontrado con id: " + dto.getClienteId()));
+        Cliente cliente = recursoActivoConsulta.clienteActivoPorId(dto.getClienteId());
 
         Cuenta cuenta = new Cuenta();
         cuenta.setNumeroCuenta(dto.getNumeroCuenta());
@@ -72,10 +68,7 @@ public class CuentaServiceImpl implements CuentaService {
     }
 
     private Cuenta buscarActiva(Long id) {
-        return cuentaRepository
-                .findByIdAndEstadoTrue(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cuenta no encontrada con id: " + id));
+        return recursoActivoConsulta.cuentaActivaPorId(id);
     }
 
     private CuentaDTO toDto(Cuenta cuenta) {

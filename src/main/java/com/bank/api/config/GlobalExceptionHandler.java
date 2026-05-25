@@ -20,35 +20,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SaldoInsuficienteException.class)
     public ResponseEntity<ErrorResponse> handleSaldoInsuficiente(
             SaldoInsuficienteException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI()));
+        return responder(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> handleRecursoNoEncontrado(
             RecursoNoEncontradoException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI()));
+        return responder(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI()));
+        return responder(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
-                .body(buildError(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), request.getRequestURI()));
+        return responder(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), request);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NoHandlerFoundException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildError(HttpStatus.NOT_FOUND, "Recurso no encontrado", request.getRequestURI()));
+        return responder(HttpStatus.NOT_FOUND, "Recurso no encontrado", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -57,17 +52,17 @@ public class GlobalExceptionHandler {
         String detalle = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(buildError(HttpStatus.BAD_REQUEST, detalle, request.getRequestURI()));
+        return responder(HttpStatus.BAD_REQUEST, detalle, request);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(buildError(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Error interno del servidor",
-                        request.getRequestURI()));
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", request);
+    }
+
+    private ResponseEntity<ErrorResponse> responder(
+            HttpStatus status, String mensaje, HttpServletRequest request) {
+        return ResponseEntity.status(status).body(buildError(status, mensaje, request.getRequestURI()));
     }
 
     private ErrorResponse buildError(HttpStatus status, String mensaje, String path) {

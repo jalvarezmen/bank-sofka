@@ -1,10 +1,9 @@
 package com.bank.api.service;
 
 import com.bank.api.dto.ReporteDTO;
-import com.bank.api.exception.RecursoNoEncontradoException;
 import com.bank.api.model.Movimiento;
-import com.bank.api.repository.ClienteRepository;
 import com.bank.api.repository.MovimientoRepository;
+import com.bank.api.service.support.RecursoActivoConsulta;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -18,15 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReporteServiceImpl implements ReporteService {
 
     private final MovimientoRepository movimientoRepository;
-    private final ClienteRepository clienteRepository;
+    private final RecursoActivoConsulta recursoActivoConsulta;
 
     @Override
     @Transactional(readOnly = true)
     public List<ReporteDTO> generarReporte(Long clienteId, LocalDate fechaInicio, LocalDate fechaFin) {
-        clienteRepository
-                .findByClienteIdAndEstadoTrue(clienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cliente no encontrado con id: " + clienteId));
+        recursoActivoConsulta.clienteActivoPorId(clienteId);
 
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
